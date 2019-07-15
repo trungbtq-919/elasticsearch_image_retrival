@@ -43,13 +43,26 @@ def get_image_fetures(features_csv_path): ### get 128 dim embs vectors of images
     return train_embs
 
 
-def generate_json_string_tokens_list(encoded_string_tokens, train_embs): #### generate json for indexing to elastic
+def get_image_id(image_id_path):
+
+    file = open(image_id_path, 'r')
+    reader = csv.reader(file)
+    train_labels = []
+    for line in reader:
+        train_labels.append(line[0])
+
+    train_labels = train_labels[1:]
+
+    return train_labels
+
+
+def generate_json_string_tokens_list(encoded_string_tokens, train_embs, train_labels): #### generate json for indexing to elastic
                                                                         #### search
-    json_string_tokens_list = list()
+    json_string_tokens_list = []
     for i in range(len(encoded_string_tokens)):
-        id = i + 1
+        # id = i + 1
         json_string_token = {
-            'id': id,
+            'id': train_labels[i],
             'image_encoded_tokens': encoded_string_tokens[i],
             'image_actual_vector': train_embs[i]
         }
@@ -63,14 +76,14 @@ def generate_json_string_tokens_list(encoded_string_tokens, train_embs): #### ge
 def save_json_string_tokens(directory, json_string_tokens_list):
 
     combination_name = directory.split('/')[-1]
-    print(combination_name)
+    # print(combination_name)
     if not os.path.exists(directory+'/'+combination_name+'.json'):
         with open(directory+'/'+combination_name+'.json', 'w') as f:
             json.dump(json_string_tokens_list, f)
             f.close()
 
 
-def main():
+def json_generate_main():
     directory_list = get_list_directory(path)
     for directory in directory_list:
 
@@ -83,7 +96,10 @@ def main():
         train_embs = get_image_fetures(features_csv_path)
         # print(len(train_embs))
 
-        json_string_tokens_list = generate_json_string_tokens_list(encoded_string_tokens, train_embs)
+        image_id_path = './vn_celeb_face_recognition/train.csv'
+        train_labels = get_image_id(image_id_path)
+
+        json_string_tokens_list = generate_json_string_tokens_list(encoded_string_tokens, train_embs, train_labels)
         # print(json_string_tokens_list)
 
         save_json_string_tokens(directory, json_string_tokens_list)
@@ -93,8 +109,8 @@ def main():
         # break
 
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()
 
 
 
