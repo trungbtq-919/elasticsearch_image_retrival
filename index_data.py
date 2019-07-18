@@ -8,11 +8,12 @@ def gen_index_data(num_groups, num_clusters):
 
 	 # Load index json file
 	 file_path = "./encode_results/encode_" + str(num_groups) \
-	 			+ "groups_" + str(num_clusters) + "clusters/"
-	 file_name_json = 
+	 			+ "groups_" + str(num_clusters) + "clusters/" \
+	 			+ "encode_" + str(num_groups) + "groups_" \
+	 			+ str(num_clusters) + "clusters" + ".json"
 	 
 	 # Open file
-	 with open(file_path + "encode_16groups_20clusters" + ".json") as f:
+	 with open(file_path) as f:
 	 	json_index_file = json.load(f)
 
 	 for idx, document in enumerate(json_index_file):
