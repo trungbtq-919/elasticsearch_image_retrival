@@ -1,1 +1,6 @@
 encode_results/
+venv/
+vn_celeb_face_recognition/
+test.*
+.idea/
+.ipynb_checkpoints/

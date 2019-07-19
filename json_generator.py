@@ -3,20 +3,18 @@ import json
 import numpy as np
 import csv
 
-path = './encode_results'
-features_csv_path = './train_embs.npy'
-
-
 class JsonStringTokenGenerator(object):
 
     def __init__(self, encoded_string_tokens_list, train_embs, train_labels, image_names):
+        
         self.encoded_string_tokens_list = encoded_string_tokens_list
         self.train_embs = train_embs
         self.train_labels = train_labels
         self.image_names = image_names
 
-    def generate_json_string_tokens_list(self):  #### generate json for indexing to elastic
-                                                         #### search
+
+    def generate_json_string_tokens_list(self):
+
         json_string_tokens_list = []
         for i in range(len(self.encoded_string_tokens_list)):
             # id = i + 1
@@ -46,7 +44,10 @@ def get_list_directory(path): ## get list of directory containing encoded string
 # print(directory)
 
 
-def get_string_tokens_list(directory): ## get encoded string tokens from csv files ##
+def get_string_tokens_list(directory):
+    """ Get encoded string tokens from csv files.
+    """
+
     string_tokens_paths = list()
 
     for root, dirs, files in os.walk(directory, topdown=False):
@@ -98,7 +99,11 @@ def save_json_string_tokens(directory, json_string_tokens_list):
             f.close()
 
 
-def json_generate_main():
+def main():
+    
+    path = './encode_results'
+    features_csv_path = './train_embs.npy'
+    
     directory_list = get_list_directory(path)
     for directory in directory_list:
 
@@ -126,4 +131,4 @@ def json_generate_main():
 
 
 if __name__ == '__main__':
-    json_generate_main()
+    main()
