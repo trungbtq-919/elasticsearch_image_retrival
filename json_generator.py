@@ -9,10 +9,11 @@ features_csv_path = './train_embs.npy'
 
 class JsonStringTokenGenerator(object):
 
-    def __init__(self, encoded_string_tokens_list, train_embs, train_labels):
+    def __init__(self, encoded_string_tokens_list, train_embs, train_labels, image_names):
         self.encoded_string_tokens_list = encoded_string_tokens_list
         self.train_embs = train_embs
         self.train_labels = train_labels
+        self.image_names = image_names
 
     def generate_json_string_tokens_list(self):  #### generate json for indexing to elastic
                                                          #### search
@@ -21,8 +22,10 @@ class JsonStringTokenGenerator(object):
             # id = i + 1
             json_string_token = {
                 'id': self.train_labels[i],
-                'image_encoded_tokens': self.encoded_string_tokens_list[i],
-                'image_actual_vector': self.train_embs[i]
+                'image_name': self.image_names[i],
+                'image_url': 'empty',
+                'image_actual_vector': self.train_embs[i],
+                'image_encoded_tokens': self.encoded_string_tokens_list[i]
             }
 
             json_string_tokens_list.append(json_string_token)
@@ -67,17 +70,22 @@ def get_image_fetures(features_csv_path): ### get 128 dim embs vectors of images
     return train_embs
 
 
-def get_image_id(image_id_path):
+def get_metadata(image_path):
 
-    file = open(image_id_path, 'r')
+    file = open(image_path, 'r')
     reader = csv.reader(file)
     train_labels = []
+    image_names = []
     for line in reader:
-        train_labels.append(line[0])
+        image_names.append(line[0])
+        train_labels.append(line[1])
 
+    # First line in .csv file is "image + label"
+    # So *start_index* should be started from 1 instead of 0.
+    image_names = image_names[1:]
     train_labels = train_labels[1:]
 
-    return train_labels
+    return image_names, train_labels
 
 
 def save_json_string_tokens(directory, json_string_tokens_list):
@@ -119,8 +127,3 @@ def json_generate_main():
 
 if __name__ == '__main__':
     json_generate_main()
-
-
-
-
-
