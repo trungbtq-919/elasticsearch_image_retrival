@@ -1,8 +1,8 @@
-from elasticsearch import Elasticsearch
+import es_connector as ES_Connector
 from elasticsearch.helpers import bulk
 import argparse
 import json
-# import json_generator as JSON_Generator
+
 
 def gen_index_data(num_groups, num_clusters):
 
@@ -29,27 +29,29 @@ def gen_index_data(num_groups, num_clusters):
 	 		"_source": document
 	 	}
 
+
 def main():
-	"""
+
 	host = "localhost"
 	port = 9200
-	es = Elasticsearch({
-		"host": host,
-		"port": port
-		})
-	"""
-	parser = argparse.ArgumentParser("Index data to Elasticsearch")
-	parser.add_argument("--num_groups", type=int, required=True)
-	parser.add_argument("--num_clusters", type=int, required=True)
-	args = parser.parse_args()
+	es = ES_Connector.connect(host, port)
 
-	host = "192.168.19.71"
-	port = "9200"
-	es = Elasticsearch(host + ":" + port)
-	
-	# Index
-	bulk(es, gen_index_data(args.num_groups, args.num_clusters))
+	num_groups = 16
+	num_clusters = 20
+	bulk(es, gen_index_data(num_groups, num_clusters))
 
 
 if __name__ == '__main__':
 	main()
+
+
+
+
+
+
+
+
+
+
+
+

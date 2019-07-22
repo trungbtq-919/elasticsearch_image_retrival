@@ -3,7 +3,7 @@ import json
 import numpy as np
 import csv
 
-class JsonStringTokenGenerator(object):
+class JsonStringTokenGenerator:
 
     def __init__(self, encoded_string_tokens_list, train_embs, train_labels, image_names):
         
@@ -13,13 +13,19 @@ class JsonStringTokenGenerator(object):
         self.image_names = image_names
 
 
+    def gen_json():
+        return {
+            
+        }
+
+
     def generate_json_string_tokens_list(self):
 
         json_string_tokens_list = []
         for i in range(len(self.encoded_string_tokens_list)):
             # id = i + 1
             json_string_token = {
-                'id': self.train_labels[i],
+                'label': self.train_labels[i],
                 'image_name': self.image_names[i],
                 'image_url': 'empty',
                 'image_actual_vector': self.train_embs[i],

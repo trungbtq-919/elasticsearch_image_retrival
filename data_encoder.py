@@ -4,8 +4,7 @@ import csv
 import os
 import pickle
 
-
-class DataEncoder(object):
+class DataEncoder:
 
     def __init__(self):
 
@@ -15,8 +14,6 @@ class DataEncoder(object):
 
     def preprocess(self):
         """ subdivide embedding vector into groups for clustering
-
-        * Now, just support 2-D numpy array
         """
 
         dimension = self.embs_vector.shape[1]
@@ -27,7 +24,7 @@ class DataEncoder(object):
             a = group_id * group_dimension
             b = (group_id + 1) * group_dimension
 
-            group_i = self.embs_vector[:, a:b]
+            group_i = self.embs_vector[0, a:b]
             preprocessed_embs_vector.append(group_i)
 
         return preprocessed_embs_vector
@@ -42,16 +39,18 @@ class DataEncoder(object):
         preprocessed_embs_vector = self.preprocess()
 
         # Load kmeans model for encoding.
-        kmeans_model_path = "model/kmeans_model" + ".pckl"
-        with open(kmeans_model_path, "rb") as f:
-            kmeans = pickle.load(f)
+        kmeans = []
+        kmeans_model_path = "model/kmeans_models_group_"
+        for group in range(self.num_groups):
+            with open(kmeans_model_path + str(group + 1) + '.pckl', "rb") as f:
+                kmeans.append(pickle.load(f))
 
         ############## Clustering ##############
         # Predict cluster for each subvector
         subvector_clusters = []
         for i in range(self.num_groups):
             group = preprocessed_embs_vector[i]
-            label = kmeans.predict(X=group)
+            label = kmeans[i].predict(X=group.reshape((1, -1)))
             subvector_clusters.append(label)
 
         ############# Tokenize ################

@@ -1,33 +1,24 @@
-from elasticsearch import Elasticsearch
+import es_connector as ES_Connector
 from data_encoder import DataEncoder as Encoder
 import numpy as np
 import argparse
 import csv
 import json
+import math
+import logging
+import sys
 
 
-def search(embedding_vector, ES_client):
-	
-	########### ENCODING ##########
+def search(query_vector, ES_client):
+	""" Query vectors in database for similarity with `query_vector`
+
+	* Note: Now, we just support for querying only one face at time.
+	"""
+
+	########### ENCODE ##########
 	encoder = Encoder()
-	string_tokens = encoder.encode(embedding_vector)
-	
-	# # Just load created string tokens.
-	# file_path = "./encode_results/encode_" + str(args.num_groups) \
-	#  			+ "groups_" + str(args.num_clusters) + "clusters/" \
-	#  			+ "encoded_string_" + str(args.num_groups) + "groups_" \
-	#  			+ str(args.num_clusters) + "clusters" + ".csv"
-	# with open(file_path) as csv_file:
-	# 	csv_reader = csv.reader(csv_file, delimiter=",")
-	# 	for idx, line in enumerate(csv_reader):
-	# 		line_number = idx + 1
-	# 		if line_number == 7:
-	# 			for sub_token in line:
-	# 				query_string_tokens.append(sub_token)
-	# 			break
+	string_tokens = encoder.encode(query_vector)
 
-	#print(type(query_string_tokens[0][0])) # For debug
-	
 	string_tokens_chunks = list()
 	for i in range(encoder.num_groups):
 		sub_field = {
@@ -39,11 +30,12 @@ def search(embedding_vector, ES_client):
 			"weight": 1
 		}
 
-		string_tokens_chunks.append(sub_field)
+		string_tokens_chunks.append(sub_field);
 
 	# RETRIEVE ONLY
+	s = 20
 	request_body = {
-		"size": 5,
+		"size": s,
 		"query": {
 			"function_score": {
 				"functions": string_tokens_chunks,
@@ -53,40 +45,104 @@ def search(embedding_vector, ES_client):
 		}
 	}
 
-
-	# print(json.dumps(request_body_2, indent=2)) # For debug
+	############ QUERY #############
 	res = ES_client.search(index="face_off", body=request_body)
 	
-	# Print Results in console.
-	print(json.dumps(res, indent=2)) # For debug	
+	# Print some results in console for debugging.
+	logging.debug(json.dumps(res, indent=2))
+
+	############ RE-RANK ############
+	vectors = []
+	for i in range(s):
+		embed_vector = res['hits']['hits'][i]['_source']['embedding_vector']
+		id_ = res['hits']['hits'][i]['_id']
+
+		# Convert to numpy array for reranking.
+		embed_vector = np.array(embed_vector).reshape((1, -1))
+		vectors.append(dict({
+				'vector': embed_vector,
+				'id': id_,
+				'dist': 0
+			}))
+	
+	rerank(vectors, anchor_vector=query_vector)
+	top_id = [vector['id'] for vector in vectors]
+
+	ret = []
+	objs = res['hits']['hits']
+	for id_ in top_id:
+		for obj in objs:
+			if obj['_id'] == id_:
+				ret.append(obj)
+				break
+
+	return ret
 
 
-def rerank(vectors):
-	pass
+def rerank(vectors, anchor_vector):
+	s = len(vectors)
+	for i in range(s):
+		# Compare distance between two vector
+		# using *Euclided distance* by default.
+		dist = get_distance(vectors[i]['vector'], anchor_vector)
+		vectors[i]['dist'] = dist
+	
+	# Ascending sort.
+	vectors.sort(key=lambda x: x['dist'])
 
 
 def get_distance(vector1, vector2, metric='Euclidean'):
-	pass
+	if metric == 'Euclidean':
+		return math.sqrt(np.sum((vector2 - vector1)**2))
+
+
+def logger_config(level):
+
+	es_logger = logging.getLogger('elasticsearch')
+	urllib_logger = logging.getLogger('urllib3')
+	
+	es_logger.setLevel(logging.WARNING)
+	urllib_logger.setLevel(logging.WARNING)
+
+	logging.basicConfig(level=level)
 
 
 def main():
 
+	logger_config(level=logging.WARNING)
+
 	# Elasticsearch client.
-	host = "192.168.19.71"
-	port = "9200"
-	es = Elasticsearch(host + ":" + port)
+	host = "localhost"
+	port = 9200
+	es = ES_Connector.connect(host, port)
 
 	# Query vector for testing purpose.
 	model_folder_path = "hyperparams_training_data/"
 	embedding_vectors = np.load(model_folder_path + "train_embs.npy")
 
 	# Get i-th Embedding vector for searching.
-	i = 0
+	i = 1
 	query_vector = np.expand_dims(embedding_vectors[i], axis=0)
 
 	# Search
-	search(query_vector, es)
+	objs = search(query_vector, es)
 	
+	top_k = 5
+	for i in range(top_k):
+		print(json.dumps(objs[i], indent=2))
 
 if __name__ == "__main__":
 	main()
+
+
+
+
+
+
+
+
+
+
+
+
+
