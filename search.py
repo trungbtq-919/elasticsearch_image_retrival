@@ -10,9 +10,7 @@ import json
 
 def main():
 	# Elasticsearch client.
-	host = "localhost"
-	port = "9200"
-	es = Elasticsearch(host + ":" + port)
+	es = Elasticsearch("192.168.19.71:9200")
 
 	# For testing
 	# Query vector
