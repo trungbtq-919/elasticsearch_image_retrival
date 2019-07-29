@@ -77,13 +77,13 @@ def get_image_id(image_id_path):
     train_labels = []
     image_names = []
     for line in reader:
-        train_labels.append(line[0])
-        image_names.append(line[1])
+        image_names.append(line[0])
+        train_labels.append(line[1])
 
     train_labels = train_labels[1:]
     image_names = image_names[1:]
 
-    return train_labels
+    return train_labels, image_names
 
 
 def save_json_string_tokens(directory, json_string_tokens_list):

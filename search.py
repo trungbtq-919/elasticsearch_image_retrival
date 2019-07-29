@@ -1,19 +1,15 @@
-"""
-This file is used for testing search with Elasticsearch.
-Author: Gia Huy
-"""
-
 from elasticsearch import Elasticsearch
 from data_encoder import DataEncoder
 import numpy as np
+from scipy import spatial
 import csv
 import json
 
 
 class Searcher(object):
 
-	def __init__(self, num_returns, num_groups, num_clusters, query_vector, server_url, index_name):
-		self.num_returns = num_returns
+	def __init__(self, threshold, num_groups, num_clusters, query_vector, server_url, index_name):
+		self.threshold = threshold
 		self.es = Elasticsearch(server_url)
 		self.index_name = index_name
 		self.num_groups = num_groups
@@ -42,7 +38,7 @@ class Searcher(object):
 
 		# RETRIEVE ONLY
 		request_body = {
-			"size": 20,
+			"size": 30,
 			"query": {
 				"function_score": {
 					"functions": string_tokens_body,
@@ -64,7 +60,6 @@ class Searcher(object):
 		results_from_es = []
 		for result in res['hits']['hits']:
 			results_from_es.append(result['_source'])
-		print("******")
 
 		return results_from_es
 
@@ -72,17 +67,21 @@ class Searcher(object):
 
 		results_from_es = self.get_result_from_es()
 		result_dist = []
+		final_results = []
 		for result_from_es in results_from_es:
 			result_actual_vector = np.asarray(result_from_es['image_actual_vector'])
-			result_dist.append(np.linalg.norm(self.query_vector-result_actual_vector))
+			# result_dist.append(np.linalg.norm(self.query_vector-result_actual_vector))
+			# result_dist.append(spatial.distance.cosine(self.query_vector, result_actual_vector))
+			dist = np.linalg.norm(self.query_vector-result_actual_vector)
+			# dist = spatial.distance.cosine(self.query_vector, result_actual_vector)
+			if dist <= self.threshold:
+				final_results.append(result_from_es)
 
-		sorted_index = np.argsort(result_dist)
 
-		final_results = []
-		for i in range(self.num_returns):
-			index = np.where(sorted_index==i)[0][0]
-			final_results.append(results_from_es[index])
-			print(results_from_es[index]['id'])
+		# sorted_index = np.argsort(result_dist)
+		# for i in range(self.num_returns):
+		# 	index = np.where(sorted_index==i)[0][0]
+		# 	final_results.append(results_from_es[index])
 		return final_results
 
 	def search(self):
