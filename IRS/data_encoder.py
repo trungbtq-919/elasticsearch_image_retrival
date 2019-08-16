@@ -7,7 +7,8 @@ import pickle
 
 class DataEncoder(object):
 
-    def __init__(self, num_groups, num_clusters, k_means_iter, train_embs):
+    def __init__(self, num_groups, num_clusters, k_means_iter, train_embs, directory_name):
+        self.directory_name = directory_name
         self.num_groups = num_groups
         self.num_clusters = num_clusters
         self.k_means_iter = k_means_iter
@@ -26,29 +27,34 @@ class DataEncoder(object):
             group_i = self.train_embs[:, a:b]
             preprocessed_train_embs.append(group_i)
 
+        # print(len(preprocessed_train_embs[1]))
         return preprocessed_train_embs
 
     def encode_string_tokens(self):  # genterate encoded string tokens
 
         preprocessed_train_embs = self.preprocess_train_embs_vectors()
+        # print(len(preprocessed_train_embs[1]))
 
         kmeans = []
         num_data_points = self.train_embs.shape[0]
         labels = np.zeros((num_data_points, self.num_groups))
 
-        directory = './encode_results/encode_' + str(self.num_groups) + 'groups_' \
+        directory = './'+ self.directory_name + '/encode_' + str(self.num_groups) + 'groups_' \
                          + str(self.num_clusters) + 'clusters'
         kmeans_model_name = 'kmeans_models.pckl'
         kmeans_models_path = directory + '/' + kmeans_model_name
 
+        # check if Kmeans models doesn't exist, train Kmeans according to m groups
         if not os.path.exists(kmeans_models_path):
             for i in range(len(preprocessed_train_embs)):
                 group_i = preprocessed_train_embs[i]
+                # print(group_i.shape)
+                # print(len(preprocessed_train_embs))
                 kmeans_i = KMeans(n_clusters=self.num_clusters, n_init=10, max_iter=self.k_means_iter)
                 label_i = kmeans_i.fit_predict(X=group_i)
                 kmeans.append(kmeans_i)
                 labels[:, i] += label_i
-        else:
+        else: # if not take kmeans models and encode
             with open(kmeans_models_path, "rb") as f:
                 while True:
                     try:
@@ -63,6 +69,7 @@ class DataEncoder(object):
 
         # print(len(kmeans), labels.shape)
 
+        # create encode token strings
         encoded_string_list = []
         for i in range(num_data_points):
             encoded_string_i = []
@@ -77,9 +84,10 @@ class DataEncoder(object):
     def save_results(self, kmeans, encoded_string_list): #### SAVE KMEANS MODEL AND
                                                             # ENCODED STRING TOKENS #######
 
-        csv_file_name = 'encoded_string_' + str(self.num_groups) + 'groups_' + str(self.num_clusters) + 'clusters.csv'
+        csv_file_name = 'encoded_string_' + str(self.num_groups) + 'groups_' + str(self.num_clusters) +\
+                        'clusters.csv'
 
-        directory_name = './encode_results/encode_' + str(self.num_groups) + 'groups_' \
+        directory_name = './' + self.directory_name + '/encode_' + str(self.num_groups) + 'groups_' \
                          + str(self.num_clusters) + 'clusters'
 
         if not os.path.exists(directory_name):
@@ -104,19 +112,18 @@ class DataEncoder(object):
     def run_encode_data(self):
 
         print('start to encode with {} groups and {} clusters'.format(self.num_groups, self.num_clusters))
-
-        preprocessed_train_embs = self.preprocess_train_embs_vectors()
-        kmeans, encoded_string_list = self.encode_string_tokens(preprocessed_train_embs)
+        kmeans, encoded_string_list = self.encode_string_tokens()
         self.save_results(kmeans, encoded_string_list)
 
 
 def encode_main():
-    train_embs = np.load('train_embs.npy')
+    train_embs = np.load('train_embs_VGGFace.npy')
+    print(train_embs.shape)
+    # print(len(train_embs))
     # print(train_embs.shape)
 
-    nums_groups = [8, 16, 32, 64]
-    nums_clusters = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
-                     31, 32]
+    nums_groups = [128]
+    nums_clusters = [32]
 
     # nums_groups = [8]
     # nums_clusters = [8]
@@ -124,7 +131,7 @@ def encode_main():
 
     for num_groups in nums_groups:
         for num_clusters in nums_clusters:
-            data_encoder = DataEncoder(num_groups, num_clusters, max_iter, train_embs[0].reshape(1, train_embs.shape[1]))
+            data_encoder = DataEncoder(num_groups, num_clusters, max_iter, train_embs, 'encode_results_vgg')
             data_encoder.run_encode_data()
 
 

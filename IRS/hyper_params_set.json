@@ -1,0 +1,5 @@
+{
+  "nums_groups": [128],
+  "nums_clusters": [32],
+  "thresholds": [0.35]
+}

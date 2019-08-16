@@ -1,1 +1,11 @@
-encode_results/
+IRS/encode_results/
+IRS/encode_results_vgg/
+IRS/train*
+IRS/PCA*
+CNN_embs/
+__pycache__/
+.idea/
+main_1.py
+main_2.py
+main_3.py
+main_4.py
